@@ -407,8 +407,8 @@ java_toolchain(
     jvm_opts = [
         # In JDK9 we have seen a ~30% slow down in JavaBuilder performance
         # when using G1 collector and having compact strings enabled.
-        #"-XX:+UseParallelOldGC",
-        #"-XX:-CompactStrings",
+        "-XX:+UseParallelOldGC",
+        "-XX:-CompactStrings",
         # Allow JavaBuilder to access internal javac APIs.
         "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
         "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
@@ -487,8 +487,8 @@ java_toolchain(
     jvm_opts = [
         # In JDK9 we have seen a ~30% slow down in JavaBuilder performance when using
         # G1 collector and having compact strings enabled.
-        #"-XX:+UseParallelOldGC",
-        #"-XX:-CompactStrings",
+        "-XX:+UseParallelOldGC",
+        "-XX:-CompactStrings",
         # Allow JavaBuilder to access internal javac APIs.
         "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
         "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
@@ -538,8 +538,8 @@ java_toolchain(
     jvm_opts = [
         # In JDK9 we have seen a ~30% slow down in JavaBuilder performance when using
         # G1 collector and having compact strings enabled.
-        #"-XX:+UseParallelOldGC",
-        #"-XX:-CompactStrings", # TODO Problem with local JDK?
+        "-XX:+UseParallelOldGC",
+        "-XX:-CompactStrings",
         # Allow JavaBuilder to access internal javac APIs.
         "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
         "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
@@ -628,12 +628,12 @@ toolchain(
 
 load("@local_config_platform//:constraints.bzl", "HOST_CONSTRAINTS")
 
-toolchain(
-    name = "local_jdk",
-    exec_compatible_with = HOST_CONSTRAINTS,
-    toolchain = "@local_jdk//:jdk",
-    toolchain_type = ":runtime_toolchain_type",
-)
+#toolchain(
+#    name = "local_jdk",
+#    exec_compatible_with = HOST_CONSTRAINTS,
+#    toolchain = "@local_jdk//:jdk",
+#    toolchain_type = ":runtime_toolchain_type",
+#)
 
 toolchain(
     name = "remotejdk11_linux",

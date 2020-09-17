@@ -30,16 +30,21 @@ toolchain_type(name = "toolchain_type")
 # Used to distinguish toolchains used for Java execution, ie the JavaRuntimeInfo.
 toolchain_type(name = "runtime_toolchain_type")
 
+# Points to either :runtime_toolchain_type or :legacy_current_java_runtime
 java_runtime_alias(name = "current_java_runtime")
 
+# Points to :current_java_runtime with host transition
 java_host_runtime_alias(name = "current_host_java_runtime")
 
+# Points to either :toolchain_type or :legacy_current_java_toolchain
 java_toolchain_alias(name = "current_java_toolchain")
 
 # This exists to support the migration to toolchain resolution.
 # TODO(cushon): delete once the migration is complete.
+# Points to --javabase/--host_javabase, default value ":jdk"/":remote_jdk11"
 legacy_java_runtime_alias(name = "legacy_current_java_runtime")
 
+# Points to --java_toolchain/--host_java_toolchain, default value ":toolchain"/":remote_toolchain"
 legacy_java_toolchain_alias(name = "legacy_current_java_toolchain")
 
 # Used to set --host_javabase or --javabase to a local JDK without having to define
@@ -97,6 +102,7 @@ java_runtime_files(
 #
 # TODO(adonovan): add cases for //src/conditions:linux_arm when released in Bazel.
 # TODO(adonovan): why is there no //src/conditions target meaning "just linux"?
+# Required by: "//src/main/native..."
 cc_library(
     name = "jni",
     hdrs = [":jni_header"] + select({
@@ -123,26 +129,48 @@ cc_library(
     }),
 )
 
+# On Windows, executables end in ".exe", but the label we reach it through
+# must be platform-independent. Thus, we create a little filegroup that
+# contains the appropriate platform-dependent file.
+
+# Required by: Android, some tests
+remote_java_tools_filegroup(
+    name = "ijar",
+    target = ":ijar",
+)
+
 exports_files(["BUILD.java_tools"])
 
+# Required by: Bazel java_test, java_binary rule
 remote_java_tools_java_import(
     name = "JacocoCoverageRunner",
     target = ":java_tools/JacocoCoverage_jarjar_deploy.jar",
 )
 
-remote_java_tools_java_import(
-    name = "JacocoCoverage",
-    target = ":java_tools/JacocoCoverage_jarjar_deploy.jar",
-)
-
+# Required by: Bazel java_test rule
 remote_java_tools_java_import(
     name = "TestRunner",
     target = ":java_tools/Runner_deploy.jar",
 )
 
+# Required by: Android, scala
 remote_java_tools_filegroup(
     name = "TestRunner_deploy.jar",
     target = ":java_tools/Runner_deploy.jar",
+)
+
+# Required by: Android: @bazel_tools//tools/android:build_java8_legacy_dex
+alias(
+    name = "proguard",
+    actual = select({
+        "//src/conditions:darwin": "@remote_java_tools_darwin//:proguard",
+        "//src/conditions:darwin_x86_64": "@remote_java_tools_darwin//:proguard",
+        "//src/conditions:windows": "@remote_java_tools_windows//:proguard",
+        "//src/conditions:linux_x86_64": "@remote_java_tools_linux//:proguard",
+        # On different platforms the linux repository can be used because the
+        # proguard deploy jar is platform-agnostic.
+        "//conditions:default": "@remote_java_tools_linux//:proguard",
+    }),
 )
 
 filegroup(
@@ -156,18 +184,21 @@ java_import(
     neverlink = 1,
 )
 
+# Required by: legacy targets
 alias(
     name = "jdk",
     actual = "@local_jdk//:jdk",
 )
 
+# TODO cleaner definition using toolchains
 bootclasspath(
     name = "platformclasspath",
     src = "DumpPlatformClassPath.java",
-    host_javabase = "current_java_runtime",
-    target_javabase = "current_java_runtime",
+    host_javabase = ":current_java_runtime",
+    target_javabase = ":current_java_runtime",
 )
 
+# Required by: legacy targets
 alias(
     name = "toolchain",
     actual = select({
@@ -179,6 +210,7 @@ alias(
     }),
 )
 
+# Required by: legacy targets
 alias(
     name = "remote_toolchain",
     actual = select({
@@ -241,11 +273,6 @@ py_test(
     ],
 )
 
-remote_java_tools_java_import(
-    name = "JarJar",
-    target = ":JarJar",
-)
-
 test_suite(
     name = "windows_tests",
     tags = [
@@ -262,6 +289,7 @@ test_suite(
 )
 
 # A JDK 11 for use as a --host_javabase.
+# Required by: legacy targets
 alias(
     name = "remote_jdk11",
     actual = select(
@@ -289,7 +317,7 @@ java_toolchain(
     genclass = ["@remote_java_tools_linux//:GenClass"],
     header_compiler = ["@remote_java_tools_linux//:Turbine"],
     header_compiler_direct = ["@remote_java_tools_linux//:TurbineDirect"],
-    ijar = ["@remote_java_tools_linux//:ijar"],
+    ijar = ["@remote_java_tools_linux//:ijar"],  # TODO has selects
     jacocorunner = "@remote_java_tools_linux//:jacoco_coverage_runner_filegroup",
     javabuilder = ["@remote_java_tools_linux//:JavaBuilder"],
     javac = ["@remote_java_tools_linux//:javac_jar"],
@@ -324,12 +352,12 @@ java_toolchain(
         "-g",
         "-parameters",
     ],
-    singlejar = ["@remote_java_tools_linux//:singlejar"],
+    singlejar = ["@remote_java_tools_linux//:singlejar"],  # TODO has selects
     source_version = "8",
     target_version = "8",
     tools = [
-        ":java_compiler_jar",
-        ":jdk_compiler_jar",
+        "@remote_java_tools_linux//:java_compiler_jar",
+        "@remote_java_tools_linux//:jdk_compiler_jar",
     ],
 )
 
@@ -340,25 +368,25 @@ java_toolchain(
     genclass = ["@remote_java_tools_linux//:GenClass"],
     header_compiler = ["@remote_java_tools_linux//:Turbine"],
     header_compiler_direct = ["@remote_java_tools_linux//:TurbineDirect"],
-    ijar = ["@remote_java_tools_linux//:ijar"],
+    ijar = ["@remote_java_tools_linux//:ijar"],  # TODO has selects
     jacocorunner = "@remote_java_tools_linux//:jacoco_coverage_runner_filegroup",
     javabuilder = ["@remote_java_tools_linux//:JavaBuilder"],
     javac = ["@remote_java_tools_linux//:javac_jar"],
     javac_supports_workers = 1,
     jvm_opts = [
-        "-Xbootclasspath/p:$(location @bazel_tools//tools/jdk:javac_jar)",
+        "-Xbootclasspath/p:$(location @remote_java_tools_linux//:javac_jar)",
     ],
     misc = [
         "-XDskipDuplicateBridges=true",
         "-g",
         "-parameters",
     ],
-    singlejar = ["@remote_java_tools_linux//:singlejar"],
+    singlejar = ["@remote_java_tools_linux//:singlejar"],  # TODO has select
     source_version = "8",
     target_version = "8",
     tools = [
-        ":java_compiler_jar",
-        ":jdk_compiler_jar",
+        "@remote_java_tools_linux//:java_compiler_jar",
+        "@remote_java_tools_linux//:jdk_compiler_jar",
     ],
 )
 
@@ -369,7 +397,7 @@ java_toolchain(
     genclass = ["@remote_java_tools_windows//:GenClass"],
     header_compiler = ["@remote_java_tools_windows//:Turbine"],
     header_compiler_direct = ["@remote_java_tools_windows//:TurbineDirect"],
-    ijar = ["@remote_java_tools_windows//:ijar"],
+    ijar = ["@remote_java_tools_windows//:ijar"],  # TODO has selects
     jacocorunner = "@remote_java_tools_windows//:jacoco_coverage_runner_filegroup",
     javabuilder = ["@remote_java_tools_windows//:JavaBuilder"],
     javac = ["@remote_java_tools_windows//:javac_jar"],
@@ -404,7 +432,7 @@ java_toolchain(
         "-g",
         "-parameters",
     ],
-    singlejar = ["@remote_java_tools_windows//:singlejar"],
+    singlejar = ["@remote_java_tools_windows//:singlejar"],  # TODO has selects
     source_version = "8",
     target_version = "8",
     tools = [
@@ -420,7 +448,7 @@ java_toolchain(
     genclass = ["@remote_java_tools_darwin//:GenClass"],
     header_compiler = ["@remote_java_tools_darwin//:Turbine"],
     header_compiler_direct = ["@remote_java_tools_darwin//:TurbineDirect"],
-    ijar = ["@remote_java_tools_darwin//:ijar"],
+    ijar = ["@remote_java_tools_darwin//:ijar"],  # TODO has selects
     jacocorunner = "@remote_java_tools_darwin//:jacoco_coverage_runner_filegroup",
     javabuilder = ["@remote_java_tools_darwin//:JavaBuilder"],
     javac = ["@remote_java_tools_darwin//:javac_jar"],
@@ -455,7 +483,7 @@ java_toolchain(
         "-g",
         "-parameters",
     ],
-    singlejar = ["@remote_java_tools_darwin//:singlejar"],
+    singlejar = ["@remote_java_tools_darwin//:singlejar"],  # TODO has selects
     source_version = "8",
     target_version = "8",
     tools = [

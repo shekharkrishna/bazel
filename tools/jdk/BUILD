@@ -139,6 +139,18 @@ remote_java_tools_filegroup(
     target = ":ijar",
 )
 
+# On Windows, Java implementation of singlejar is used. We create a little
+# filegroup that contains the appropriate platform-dependent file.
+# Once https://github.com/bazelbuild/bazel/issues/2241 is fixed (that is,
+# the native singlejar is used on windows), this file group can be reused since
+# on Windows, executables end in ".exe", but the label we reach it through
+# must be platform-independent.
+# Required by: Android, scala
+remote_java_tools_filegroup(
+    name = "singlejar",
+    target = ":singlejar",
+)
+
 exports_files(["BUILD.java_tools"])
 
 # Required by: Bazel java_test, java_binary rule

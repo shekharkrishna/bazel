@@ -133,7 +133,7 @@ cc_library(
 # must be platform-independent. Thus, we create a little filegroup that
 # contains the appropriate platform-dependent file.
 
-# Required by: Android, some tests
+# Required by: Android, some tests, default_java_toolchain
 remote_java_tools_filegroup(
     name = "ijar",
     target = ":ijar",
@@ -152,6 +152,60 @@ remote_java_tools_filegroup(
 )
 
 exports_files(["BUILD.java_tools"])
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "genclass",
+    target = ":GenClass",
+)
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "turbine",
+    target = ":Turbine",
+)
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "turbine_direct",
+    target = ":TurbineDirect",
+)
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "javabuilder",
+    target = ":JavaBuilder",
+)
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "JavaBuilder_deploy.jar",
+    target = ":java_tools/JavaBuilder_deploy.jar",
+)
+
+# Required by: 1 test directly, default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "vanillajavabuilder",
+    target = ":VanillaJavaBuilder",
+)
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "javac_jar",
+    target = ":javac_jar",
+)
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "jdk_compiler_jar",
+    target = ":jdk_compiler_jar",
+)
+
+# Required by: default_java_toolchain, used by tests
+remote_java_tools_filegroup(
+    name = "java_compiler_jar",
+    target = ":java_compiler_jar",
+)
 
 # Required by: Bazel java_test, java_binary rule
 remote_java_tools_java_import(

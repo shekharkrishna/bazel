@@ -30,31 +30,6 @@ toolchain_type(name = "toolchain_type")
 # Used to distinguish toolchains used for Java execution, ie the JavaRuntimeInfo.
 toolchain_type(name = "runtime_toolchain_type")
 
-toolchain(
-    name = "dummy_java_toolchain",
-    toolchain = ":dummy_toolchain",
-    toolchain_type = ":toolchain_type",
-)
-
-cc_binary(name = "dummy_binary")
-
-java_toolchain(
-    name = "dummy_toolchain",
-    genclass = [":dummy_binary"],
-    ijar = [":dummy_binary"],
-    javabuilder = [":dummy_binary"],
-    javac = [":dummy_binary"],
-    singlejar = [":dummy_binary"],
-)
-
-toolchain(
-    name = "dummy_java_runtime_toolchain",
-    toolchain = ":dummy_java_runtime",
-    toolchain_type = ":runtime_toolchain_type",
-)
-
-java_runtime(name = "dummy_java_runtime")
-
 java_runtime_alias(name = "current_java_runtime")
 
 java_host_runtime_alias(name = "current_host_java_runtime")
@@ -80,15 +55,6 @@ java_runtime(
 filegroup(
     name = "BUILD-jdk",
     srcs = [":BUILD"],
-)
-
-# This is necessary to get the *host* Java runtime. Depending on
-# //tools/jdk:current_java_runtime from an attribute with the host transition
-# does not work because the dependency is determined based on the configuration
-# *before* the transition.
-alias(
-    name = "java_runtime_alias",
-    actual = "@bazel_tools//tools/jdk:current_java_runtime",
 )
 
 # These individual jni_* targets are exposed for legacy reasons.
@@ -157,111 +123,7 @@ cc_library(
     }),
 )
 
-alias(
-    name = "java",
-    actual = "@local_jdk//:java",
-)
-
-alias(
-    name = "jar",
-    actual = "@local_jdk//:jar",
-)
-
-alias(
-    name = "javac",
-    actual = "@local_jdk//:javac",
-)
-
-alias(
-    name = "javadoc",
-    actual = "@local_jdk//:javadoc",
-)
-
-# On Windows, executables end in ".exe", but the label we reach it through
-# must be platform-independent. Thus, we create a little filegroup that
-# contains the appropriate platform-dependent file.
-remote_java_tools_filegroup(
-    name = "ijar",
-    target = ":ijar",
-)
-
-# On Windows, Java implementation of singlejar is used. We create a little
-# filegroup that contains the appropriate platform-dependent file.
-# Once https://github.com/bazelbuild/bazel/issues/2241 is fixed (that is,
-# the native singlejar is used on windows), this file group can be reused since
-# on Windows, executables end in ".exe", but the label we reach it through
-# must be platform-independent.
-remote_java_tools_filegroup(
-    name = "singlejar",
-    target = ":singlejar",
-)
-
 exports_files(["BUILD.java_tools"])
-
-remote_java_tools_filegroup(
-    name = "genclass",
-    target = ":GenClass",
-)
-
-remote_java_tools_filegroup(
-    name = "GenClass_deploy.jar",
-    target = ":java_tools/GenClass_deploy.jar",
-)
-
-remote_java_tools_filegroup(
-    name = "bazel-singlejar_deploy.jar",
-    target = ":java_tools/bazel-singlejar_deploy.jar",
-)
-
-remote_java_tools_filegroup(
-    name = "turbine",
-    target = ":Turbine",
-)
-
-remote_java_tools_filegroup(
-    name = "turbine_deploy.jar",
-    target = ":java_tools/turbine_deploy.jar",
-)
-
-remote_java_tools_filegroup(
-    name = "turbine_direct",
-    target = ":TurbineDirect",
-)
-
-remote_java_tools_filegroup(
-    name = "turbine_direct_binary_deploy.jar",
-    target = ":java_tools/turbine_direct_binary_deploy.jar",
-)
-
-remote_java_tools_filegroup(
-    name = "javabuilder",
-    target = ":JavaBuilder",
-)
-
-remote_java_tools_filegroup(
-    name = "JavaBuilder_deploy.jar",
-    target = ":java_tools/JavaBuilder_deploy.jar",
-)
-
-remote_java_tools_filegroup(
-    name = "vanillajavabuilder",
-    target = ":VanillaJavaBuilder",
-)
-
-remote_java_tools_filegroup(
-    name = "javac_jar",
-    target = ":javac_jar",
-)
-
-remote_java_tools_filegroup(
-    name = "jdk_compiler_jar",
-    target = ":jdk_compiler_jar",
-)
-
-remote_java_tools_filegroup(
-    name = "java_compiler_jar",
-    target = ":java_compiler_jar",
-)
 
 remote_java_tools_java_import(
     name = "JacocoCoverageRunner",
@@ -283,44 +145,6 @@ remote_java_tools_filegroup(
     target = ":java_tools/Runner_deploy.jar",
 )
 
-alias(
-    name = "proguard",
-    actual = select({
-        "//src/conditions:darwin": "@remote_java_tools_darwin//:proguard",
-        "//src/conditions:darwin_x86_64": "@remote_java_tools_darwin//:proguard",
-        "//src/conditions:windows": "@remote_java_tools_windows//:proguard",
-        "//src/conditions:linux_x86_64": "@remote_java_tools_linux//:proguard",
-        # On different platforms the linux repository can be used because the
-        # proguard deploy jar is platform-agnostic.
-        "//conditions:default": "@remote_java_tools_linux//:proguard",
-    }),
-)
-
-BOOTCLASS_JARS = [
-    "rt.jar",
-    "resources.jar",
-    "jsse.jar",
-    "jce.jar",
-    "charsets.jar",
-]
-
-# TODO(cushon): this isn't compatible with JDK 9
-alias(
-    name = "bootclasspath",
-    actual = "@local_jdk//:bootclasspath",
-)
-
-alias(
-    name = "extclasspath",
-    actual = "@local_jdk//:extdir",
-)
-
-# TODO(cushon): migrate to extclasspath and delete
-alias(
-    name = "extdir",
-    actual = "@local_jdk//:extdir",
-)
-
 filegroup(
     name = "langtools",
     srcs = ["//third_party/java/jdk/langtools:javac_jar"],
@@ -333,18 +157,8 @@ java_import(
 )
 
 alias(
-    name = "jre",
-    actual = "@local_jdk//:jre",
-)
-
-alias(
     name = "jdk",
     actual = "@local_jdk//:jdk",
-)
-
-alias(
-    name = "host_jdk",
-    actual = ":remote_jdk11",
 )
 
 bootclasspath(
@@ -352,21 +166,6 @@ bootclasspath(
     src = "DumpPlatformClassPath.java",
     host_javabase = "current_java_runtime",
     target_javabase = "current_java_runtime",
-)
-
-default_java_toolchain(
-    name = "toolchain_hostjdk8",
-    jvm_opts = JDK8_JVM_OPTS,
-    source_version = "8",
-    target_version = "8",
-)
-
-# Default to the Java 8 language level.
-# TODO(cushon): consider if/when we should increment this?
-default_java_toolchain(
-    name = "legacy_toolchain",
-    source_version = "8",
-    target_version = "8",
 )
 
 alias(
@@ -390,40 +189,6 @@ alias(
         "//conditions:default": "@bazel_tools//tools/jdk:legacy_toolchain",
     }),
 )
-
-# The 'vanilla' toolchain is an unsupported alternative to the default.
-#
-# It does not provider any of the following features:
-#   * Error Prone
-#   * Strict Java Deps
-#   * Header Compilation
-#   * Reduced Classpath Optimization
-#
-# It uses the version of javac from the `--host_javabase` instead of the
-# embedded javac, which may not be source- or bug-compatible with the embedded
-# javac.
-#
-# However it does allow using a wider range of `--host_javabase`s, including
-# versions newer than the current embedded JDK.
-default_java_toolchain(
-    name = "toolchain_vanilla",
-    forcibly_disable_header_compilation = True,
-    javabuilder = [":vanillajavabuilder"],
-    jvm_opts = [],
-    source_version = "",
-    target_version = "",
-)
-
-RELEASES = (8, 9, 10, 11)
-
-[
-    default_java_toolchain(
-        name = "toolchain_java%d" % release,
-        source_version = "%s" % release,
-        target_version = "%s" % release,
-    )
-    for release in RELEASES
-]
 
 filegroup(
     name = "srcs",
@@ -513,4 +278,339 @@ alias(
                          " provide one using `--host_javabase.`",
     ),
     visibility = ["//visibility:public"],
+)
+
+# Java toolchains
+
+java_toolchain(
+    name = "toolchain_linux",
+    bootclasspath = ["@bazel_tools//tools/jdk:platformclasspath"],
+    forcibly_disable_header_compilation = 0,
+    genclass = ["@remote_java_tools_linux//:GenClass"],
+    header_compiler = ["@remote_java_tools_linux//:Turbine"],
+    header_compiler_direct = ["@remote_java_tools_linux//:TurbineDirect"],
+    ijar = ["@remote_java_tools_linux//:ijar"],
+    jacocorunner = "@remote_java_tools_linux//:jacoco_coverage_runner_filegroup",
+    javabuilder = ["@remote_java_tools_linux//:JavaBuilder"],
+    javac = ["@remote_java_tools_linux//:javac_jar"],
+    javac_supports_workers = 1,
+    jvm_opts = [
+        # In JDK9 we have seen a ~30% slow down in JavaBuilder performance
+        # when using G1 collector and having compact strings enabled.
+        "-XX:+UseParallelOldGC",
+        "-XX:-CompactStrings",
+        # Allow JavaBuilder to access internal javac APIs.
+        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+
+        # override the javac in the JDK.
+        "--patch-module=java.compiler=$(location @remote_java_tools_linux//:java_compiler_jar)",
+        "--patch-module=jdk.compiler=$(location @remote_java_tools_linux//:jdk_compiler_jar)",
+
+        # quiet warnings from com.google.protobuf.UnsafeUtil,
+        # see: https://github.com/google/protobuf/issues/3781
+        # and: https://github.com/bazelbuild/bazel/issues/5599
+        "--add-opens=java.base/java.nio=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+    ],
+    misc = [
+        "-XDskipDuplicateBridges=true",
+        "-g",
+        "-parameters",
+    ],
+    singlejar = ["@remote_java_tools_linux//:singlejar"],
+    source_version = "8",
+    target_version = "8",
+    tools = [
+        ":java_compiler_jar",
+        ":jdk_compiler_jar",
+    ],
+)
+
+java_toolchain(
+    name = "toolchain_openbsd",
+    bootclasspath = ["@bazel_tools//tools/jdk:platformclasspath"],
+    forcibly_disable_header_compilation = 0,
+    genclass = ["@remote_java_tools_linux//:GenClass"],
+    header_compiler = ["@remote_java_tools_linux//:Turbine"],
+    header_compiler_direct = ["@remote_java_tools_linux//:TurbineDirect"],
+    ijar = ["@remote_java_tools_linux//:ijar"],
+    jacocorunner = "@remote_java_tools_linux//:jacoco_coverage_runner_filegroup",
+    javabuilder = ["@remote_java_tools_linux//:JavaBuilder"],
+    javac = ["@remote_java_tools_linux//:javac_jar"],
+    javac_supports_workers = 1,
+    jvm_opts = [
+        "-Xbootclasspath/p:$(location @bazel_tools//tools/jdk:javac_jar)",
+    ],
+    misc = [
+        "-XDskipDuplicateBridges=true",
+        "-g",
+        "-parameters",
+    ],
+    singlejar = ["@remote_java_tools_linux//:singlejar"],
+    source_version = "8",
+    target_version = "8",
+    tools = [
+        ":java_compiler_jar",
+        ":jdk_compiler_jar",
+    ],
+)
+
+java_toolchain(
+    name = "toolchain_windows",
+    bootclasspath = ["@bazel_tools//tools/jdk:platformclasspath"],
+    forcibly_disable_header_compilation = 0,
+    genclass = ["@remote_java_tools_windows//:GenClass"],
+    header_compiler = ["@remote_java_tools_windows//:Turbine"],
+    header_compiler_direct = ["@remote_java_tools_windows//:TurbineDirect"],
+    ijar = ["@remote_java_tools_windows//:ijar"],
+    jacocorunner = "@remote_java_tools_windows//:jacoco_coverage_runner_filegroup",
+    javabuilder = ["@remote_java_tools_windows//:JavaBuilder"],
+    javac = ["@remote_java_tools_windows//:javac_jar"],
+    javac_supports_workers = 1,
+    jvm_opts = [
+        # In JDK9 we have seen a ~30% slow down in JavaBuilder performance when using
+        # G1 collector and having compact strings enabled.
+        "-XX:+UseParallelOldGC",
+        "-XX:-CompactStrings",
+        # Allow JavaBuilder to access internal javac APIs.
+        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+
+        # override the javac in the JDK.
+        "--patch-module=java.compiler=$(location @remote_java_tools_windows//:java_compiler_jar)",
+        "--patch-module=jdk.compiler=$(location @remote_java_tools_windows//:jdk_compiler_jar)",
+
+        # quiet warnings from com.google.protobuf.UnsafeUtil,
+        # see: https://github.com/google/protobuf/issues/3781
+        # and: https://github.com/bazelbuild/bazel/issues/5599
+        "--add-opens=java.base/java.nio=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+    ],
+    misc = [
+        "-XDskipDuplicateBridges=true",
+        "-g",
+        "-parameters",
+    ],
+    singlejar = ["@remote_java_tools_windows//:singlejar"],
+    source_version = "8",
+    target_version = "8",
+    tools = [
+        "@remote_java_tools_windows//:java_compiler_jar",
+        "@remote_java_tools_windows//:jdk_compiler_jar",
+    ],
+)
+
+java_toolchain(
+    name = "toolchain_darwin",
+    bootclasspath = ["@bazel_tools//tools/jdk:platformclasspath"],
+    forcibly_disable_header_compilation = 0,
+    genclass = ["@remote_java_tools_darwin//:GenClass"],
+    header_compiler = ["@remote_java_tools_darwin//:Turbine"],
+    header_compiler_direct = ["@remote_java_tools_darwin//:TurbineDirect"],
+    ijar = ["@remote_java_tools_darwin//:ijar"],
+    jacocorunner = "@remote_java_tools_darwin//:jacoco_coverage_runner_filegroup",
+    javabuilder = ["@remote_java_tools_darwin//:JavaBuilder"],
+    javac = ["@remote_java_tools_darwin//:javac_jar"],
+    javac_supports_workers = 1,
+    jvm_opts = [
+        # In JDK9 we have seen a ~30% slow down in JavaBuilder performance when using
+        # G1 collector and having compact strings enabled.
+        "-XX:+UseParallelOldGC",
+        "-XX:-CompactStrings",
+        # Allow JavaBuilder to access internal javac APIs.
+        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+
+        # override the javac in the JDK.
+        "--patch-module=java.compiler=$(location @remote_java_tools_darwin//:java_compiler_jar)",
+        "--patch-module=jdk.compiler=$(location @remote_java_tools_darwin//:jdk_compiler_jar)",
+
+        # quiet warnings from com.google.protobuf.UnsafeUtil,
+        # see: https://github.com/google/protobuf/issues/3781
+        # and: https://github.com/bazelbuild/bazel/issues/5599
+        "--add-opens=java.base/java.nio=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+    ],
+    misc = [
+        "-XDskipDuplicateBridges=true",
+        "-g",
+        "-parameters",
+    ],
+    singlejar = ["@remote_java_tools_darwin//:singlejar"],
+    source_version = "8",
+    target_version = "8",
+    tools = [
+        "@remote_java_tools_darwin//:java_compiler_jar",
+        "@remote_java_tools_darwin//:jdk_compiler_jar",
+    ],
+)
+
+toolchain(
+    name = "remote_java_tools_linux",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":toolchain_linux",
+    toolchain_type = ":toolchain_type",
+)
+
+toolchain(
+    name = "remote_java_tools_freebsd",
+    exec_compatible_with = [
+        "@platforms//os:freebsd",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":toolchain_linux",
+    toolchain_type = ":toolchain_type",
+)
+
+toolchain(
+    name = "remote_java_tools_openbsd",
+    exec_compatible_with = [
+        "@platforms//os:openbsd",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":toolchain_linux",
+    toolchain_type = ":toolchain_type",
+)
+
+toolchain(
+    name = "remote_java_tools_windows",
+    exec_compatible_with = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":toolchain_windows",
+    toolchain_type = ":toolchain_type",
+)
+
+toolchain(
+    name = "remote_java_tools_darwin",
+    exec_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":toolchain_darwin",
+    toolchain_type = ":toolchain_type",
+)
+
+# Java Runtime toolchains
+
+load("@local_config_platform//:constraints.bzl", "HOST_CONSTRAINTS")
+
+toolchain(
+    name = "local_jdk",
+    exec_compatible_with = HOST_CONSTRAINTS,
+    toolchain = "@local_jdk//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk11_linux",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "@remotejdk11_linux//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk11_linux_aarch64",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+    toolchain = "@remotejdk11_linux_aarch64//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk11_linux_ppc64le",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:ppc",
+    ],
+    toolchain = "@remotejdk11_linux_ppc64le//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk11_linux_s390x",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:s390x",
+    ],
+    toolchain = "@remotejdk11_linux_s390x//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk11_macos",
+    exec_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "@remotejdk11_macos//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk11_win",
+    exec_compatible_with = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "@remotejdk11_win//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk14_linux",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "@remotejdk14_linux//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk14_macos",
+    exec_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "@remotejdk14_macos//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
+)
+
+toolchain(
+    name = "remotejdk14_win",
+    exec_compatible_with = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "@remotejdk14_win//:jdk",
+    toolchain_type = ":runtime_toolchain_type",
 )

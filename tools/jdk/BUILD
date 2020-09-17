@@ -297,6 +297,13 @@ alias(
     }),
 )
 
+# Required by: 1 test
+default_java_toolchain(
+    name = "toolchain_java11",
+    source_version = "11",
+    target_version = "11",
+)
+
 filegroup(
     name = "srcs",
     srcs = [

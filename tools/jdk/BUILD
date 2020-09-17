@@ -210,6 +210,15 @@ bootclasspath(
     target_javabase = ":current_java_runtime",
 )
 
+# Default to the Java 8 language level.
+# TODO(cushon): consider if/when we should increment this?
+# Required by ":toolchain"
+default_java_toolchain(
+    name = "legacy_toolchain",
+    source_version = "8",
+    target_version = "8",
+)
+
 # Required by: legacy targets
 alias(
     name = "toolchain",
